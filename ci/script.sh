@@ -10,15 +10,27 @@ test_svd() {
     # NOTE we care about errors in svd2rust, but not about errors / warnings in rustfmt
     local cwd=$(pwd)
     pushd $td
-    $cwd/target/$TARGET/release/svd2rust -i ${1}.svd
+    $cwd/target/$TARGET/release/svd2rust -p -i ${1}.svd
 
     mv lib.rs src/lib.rs
+
+    # Save off "clean" Cargo toml
+    mv $td/Cargo.toml $td/Cargo.toml.bkp
+
+    # include Cargo features into test toml
+    cat $td/Cargo.toml.bkp > $td/Cargo.toml
+    cat CargoFeatures.toml >> $td/Cargo.toml
 
     # ignore rustfmt errors
     rustfmt src/lib.rs || true
     popd
 
-    cargo check --manifest-path $td/Cargo.toml
+    cat $td/Cargo.toml
+
+    cargo check --all-features --manifest-path $td/Cargo.toml
+
+    # Restore pre-feature'd Cargo toml
+    mv $td/Cargo.toml.bkp $td/Cargo.toml
 }
 
 main() {
